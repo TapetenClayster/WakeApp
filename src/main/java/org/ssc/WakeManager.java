@@ -1,6 +1,7 @@
 package org.ssc;
 
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.Scanner;
 
 public class WakeManager {
@@ -9,8 +10,11 @@ public class WakeManager {
     private Integer drive;
     private Integer preparation;
     private LocalTime wakeUp;
+    private WakeDatabaseConnector dbConnector;
 
     private void start() {
+        dbConnector = new WakeDatabaseConnector();
+
         String output = "Herzlich Willkommen zur WakeApp Terminal App"
                 + "--------------------------------------------"
                 + "Ihre gespeicherten Werte werden nun geladen, falls vorhanden.";
@@ -26,8 +30,18 @@ public class WakeManager {
         this.calculate();
     }
 
-    Boolean retrieveDataFromMemory() {
-        return false;
+    boolean retrieveDataFromMemory() {
+        ArrayList<WakeTime> wakeTimeList = dbConnector.getWaketimes();
+
+        if (wakeTimeList.isEmpty()) {
+            return false;
+        }
+
+        for (WakeTime wakeTime: wakeTimeList) {
+            // TODO load wake times
+        }
+
+        return true;
     }
 
     private void retrieveDateFromTerminal() {
@@ -70,5 +84,9 @@ public class WakeManager {
     public static void main(String[] args) {
         WakeManager wm = new WakeManager();
         wm.start();
+
+        // DB Test
+//        WakeDatabaseConnector db = new WakeDatabaseConnector();
+//        db.test();
     }
 }
