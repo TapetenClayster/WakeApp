@@ -45,7 +45,7 @@ public class WakeManager {
         }
 
         Integer arrival_h = Integer.parseInt(arrival_input.substring(0, arrival_input.indexOf(':')));
-        Integer arrival_min = Integer.parseInt(arrival_input.substring(arrival_input.indexOf(':') + 1, arrival_input.length() - 1));
+        Integer arrival_min = Integer.parseInt(arrival_input.substring(arrival_input.indexOf(':') + 1, arrival_input.length()));
 
         //TODO: More error handling for possible false input?
 
@@ -60,9 +60,7 @@ public class WakeManager {
 
     private void calculate() {
         Integer arrival_in_min = this.arrival.getMinute() + this.arrival.getHour() * 60;
-
         Integer wakeUpTime = arrival_in_min - this.drive - this.preparation;
-
         this.wakeUp = LocalTime.of(wakeUpTime/60, wakeUpTime % 60);
 
         System.out.println("Ihr Wecker wird um: " + this.wakeUp + " Uhr gestellt");
