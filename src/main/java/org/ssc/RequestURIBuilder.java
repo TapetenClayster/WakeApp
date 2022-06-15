@@ -8,35 +8,35 @@ public class RequestURIBuilder {
     private final String baseURL;
     private final Map<String, List<String>> requestParameters;
 
-    public RequestURIBuilder(String baseURL){
+    public RequestURIBuilder(String baseURL) {
         this.baseURL = baseURL;
         this.requestParameters = new HashMap<>();
     }
 
     public RequestURIBuilder addParameter(String parameterName, Object... parameterValues) throws ParseException {
-        if(parameterValues.length == 0) return this;
+        if (parameterValues.length == 0) return this;
 
-        try{
+        try {
             List<String> values = new ArrayList<>();
 
-            for(Object paramObject : parameterValues){
+            for (Object paramObject : parameterValues) {
                 values.add(paramObject.toString());
             }
             this.requestParameters.put(parameterName, values);
 
             return this;
-        } catch (Exception exception){
+        } catch (Exception exception) {
             exception.printStackTrace();
             throw new ParseException("Parameter conversion to string failed", 0);
         }
     }
 
-    public void removeParameter(String parameterName){
+    public void removeParameter(String parameterName) {
         requestParameters.remove(parameterName);
     }
 
-    public URI toURI(){
-        if(requestParameters.size() == 0){
+    public URI toURI() {
+        if (requestParameters.size() == 0) {
             return URI.create(baseURL);
         }
 
@@ -44,22 +44,22 @@ public class RequestURIBuilder {
         queryString.append("?");
 
         int pairCounter = 0;
-        for(Map.Entry<String, List<String>> parameterPair : requestParameters.entrySet()){
+        for (Map.Entry<String, List<String>> parameterPair : requestParameters.entrySet()) {
             pairCounter++;
 
             queryString.append(parameterPair.getKey()).append("=");
 
             int valueCounter = 0;
-            for(String parameterValue : parameterPair.getValue()){
+            for (String parameterValue : parameterPair.getValue()) {
                 valueCounter++;
 
                 queryString.append(parameterValue);
-                if(valueCounter != parameterPair.getValue().size()){
+                if (valueCounter != parameterPair.getValue().size()) {
                     queryString.append(",");
                 }
             }
 
-            if(pairCounter != requestParameters.size()){
+            if (pairCounter != requestParameters.size()) {
                 queryString.append("&");
             }
         }

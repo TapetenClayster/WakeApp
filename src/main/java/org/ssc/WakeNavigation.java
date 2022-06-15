@@ -7,7 +7,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 import org.ssc.model.Location;
 
-import java.io.IOException;
 import java.lang.reflect.Type;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -27,21 +26,28 @@ public final class WakeNavigation {
     private static final String BASE_URL_BVG_LOCATION = String.format("%s/locations", BASE_URL_BVG);
     private static final String BASE_URL_BVG_NAVIGATION = String.format("%s/journeys", BASE_URL_BVG);
 
-    private static final Map<String, String> transportTypeMap = Map.of(
-            "Auto", "driving-car",
-            "Fahrrad", "cycling-regular",
-            "ÖPNV", "bvg",
-            "Laufen", "foot-walking",
-            "Rollstuhl", "wheelchair"
+    private static final Map<Integer, String> transportTypeMap = Map.of(
+            1, "driving-car",
+            2, "cycling-regular",
+            3, "bvg",
+            4, "foot-walking",
+            5, "wheelchair"
     );
 
-    public static List<Location> searchLocationRequest(String searchInput) throws IOException, InterruptedException {
+    public static List<Location> searchLocationRequest(String searchInput) {
         HttpClient client = HttpClient.newHttpClient();
 
-        HttpResponse<String> response = client.send(
-                createSearchRequest(searchInput),
-                HttpResponse.BodyHandlers.ofString()
-        );
+        HttpResponse<String> response;
+
+        try {
+            response = client.send(
+                    createSearchRequest(searchInput),
+                    HttpResponse.BodyHandlers.ofString()
+            );
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
 
         return sanitizeSearchBody(response);
     }
@@ -67,14 +73,15 @@ public final class WakeNavigation {
     }
 
     private static List<Location> sanitizeSearchBody(HttpResponse<String> response) {
-        Type jsonElement = new TypeToken<JsonElement>() {}.getType();
+        Type jsonElement = new TypeToken<JsonElement>() {
+        }.getType();
         JsonElement result = gson.fromJson(response.body(), jsonElement);
 
         List<Location> entries = new ArrayList<>();
 
         JsonArray addresses = result.getAsJsonObject().get("features").getAsJsonArray();
 
-        for(JsonElement el : addresses){
+        for (JsonElement el : addresses) {
             JsonArray coordData = el.getAsJsonObject().get("geometry").getAsJsonObject().get("coordinates").getAsJsonArray();
             JsonObject addressData = el.getAsJsonObject().get("properties").getAsJsonObject();
 
@@ -93,23 +100,29 @@ public final class WakeNavigation {
         return entries;
     }
 
-    public static Duration navigationRequest(Location startLocation, Location endLocation, String transportMethod) throws IOException, InterruptedException {
+    public static Duration navigationRequest(Location startLocation, Location endLocation, int transportMethod) {
         HttpClient client = HttpClient.newHttpClient();
+        HttpResponse<String> response;
 
-        HttpResponse<String> response = client.send(
-                createNavigationRequest(startLocation, endLocation, transportTypeMap.get(transportMethod)),
-                HttpResponse.BodyHandlers.ofString()
-        );
+        try {
+            response = client.send(
+                    createNavigationRequest(startLocation, endLocation, transportTypeMap.get(transportMethod)),
+                    HttpResponse.BodyHandlers.ofString()
+            );
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
 
-        if(transportMethod.equals("ÖPNV"))
+        if (transportMethod == 3)
             return sanitizeBvgNavigationBody(response);
         else
             return sanitizeNavigationBody(response);
     }
 
-    private static HttpRequest createNavigationRequest(Location startLocation, Location destinationLocation, String transportMethod){
+    private static HttpRequest createNavigationRequest(Location startLocation, Location destinationLocation, String transportMethod) {
         RequestURIBuilder builder;
-        if(!transportMethod.equals("bvg")) {
+        if (!transportMethod.equals("bvg")) {
             builder = new RequestURIBuilder(String.format("%s/%s", BASE_NAVIGATION_URL, transportMethod));
 
             try {
@@ -140,7 +153,7 @@ public final class WakeNavigation {
                 e.printStackTrace();
             }
 
-            System.out.println(builder.toURI());
+            //System.out.println(builder.toURI());
         }
 
         return HttpRequest.newBuilder()
@@ -155,7 +168,8 @@ public final class WakeNavigation {
 
         try {
             builder.addParameter("results", 1);
-            builder.addParameter("query", searchLocation.street.replace(" ", "%20"));
+            String searchQuery = !searchLocation.street.isEmpty() ? searchLocation.street : searchLocation.name;
+            builder.addParameter("query", searchQuery.replace(" ", "%20"));
 
             response = HttpClient.newHttpClient().send(
                     HttpRequest.newBuilder().uri(builder.toURI()).GET().build(),
@@ -166,7 +180,8 @@ public final class WakeNavigation {
             return null;
         }
 
-        Type jsonElement = new TypeToken<JsonElement>() {}.getType();
+        Type jsonElement = new TypeToken<JsonElement>() {
+        }.getType();
         JsonElement responseBody = gson.fromJson(response.body(), jsonElement);
 
         JsonObject result = responseBody.getAsJsonArray()
@@ -183,7 +198,8 @@ public final class WakeNavigation {
     }
 
     private static Duration sanitizeNavigationBody(HttpResponse<String> response) throws NoSuchElementException {
-        Type jsonElement = new TypeToken<JsonElement>() {}.getType();
+        Type jsonElement = new TypeToken<JsonElement>() {
+        }.getType();
         JsonElement responseBody = gson.fromJson(response.body(), jsonElement);
 
         try {
@@ -196,33 +212,37 @@ public final class WakeNavigation {
                     .get("duration").getAsDouble();
 
             return Duration.ofSeconds(Double.valueOf(totalTravelTime).longValue());
-        } catch (Exception e){
+        } catch (Exception e) {
             throw new NoSuchElementException("Travel duration was not found");
         }
     }
 
-    private static Duration sanitizeBvgNavigationBody(HttpResponse<String> response) throws NoSuchElementException{
-        Type jsonElement = new TypeToken<JsonElement>() {}.getType();
+    private static Duration sanitizeBvgNavigationBody(HttpResponse<String> response) throws NoSuchElementException {
+        Type jsonElement = new TypeToken<JsonElement>() {
+        }.getType();
         JsonElement responseBody = gson.fromJson(response.body(), jsonElement);
 
-        try{
-            JsonObject currNavigation = responseBody.getAsJsonObject()
+        try {
+            JsonArray currNavigation = responseBody.getAsJsonObject()
                     .get("journeys").getAsJsonArray()
                     .get(0).getAsJsonObject()
-                    .get("legs").getAsJsonArray()
-                    .get(0).getAsJsonObject();
+                    .get("legs").getAsJsonArray();
 
-            ZonedDateTime startTime = ZonedDateTime.parse(currNavigation.get("plannedDeparture").getAsString());
-            ZonedDateTime arrivalTime = ZonedDateTime.parse(currNavigation.get("plannedArrival").getAsString());
+            ZonedDateTime startTime = ZonedDateTime.parse(currNavigation.get(0).getAsJsonObject()
+                    .get("plannedDeparture").getAsString()
+            );
+            ZonedDateTime arrivalTime = ZonedDateTime.parse(currNavigation.get(currNavigation.size() - 1).getAsJsonObject()
+                    .get("plannedArrival").getAsString()
+            );
 
             return Duration.between(startTime, arrivalTime);
-        } catch (Exception e){
+        } catch (Exception e) {
             throw new NoSuchElementException("No Start or Arrival time were found in the response body");
         }
     }
 
-    private static String getStringDataFromJsonObject(JsonObject obj, String key){
-        if(obj.has(key)){
+    private static String getStringDataFromJsonObject(JsonObject obj, String key) {
+        if (obj.has(key)) {
             return obj.get(key).getAsString();
         }
         return "";
