@@ -55,12 +55,11 @@ public final class WakeNavigation {
     private static HttpRequest createSearchRequest(String searchInput) {
         RequestURIBuilder builder = new RequestURIBuilder(BASE_SEARCH_URL);
 
-        String sanitizedSearchInput = searchInput.replace(" ", "%20");
+        String sanitizedSearchInput = String.format("%s %s",searchInput.replace(" ", "%20"), "Berlin");
 
         try {
             builder.addParameter("api_key", API_KEY);
             builder.addParameter("size", 3); //Wir brauchen nur 3 potentielle Koordinaten
-            builder.addParameter("region", "Berlin");
             builder.addParameter("text", sanitizedSearchInput);
         } catch (ParseException e) {
             e.printStackTrace();
@@ -127,7 +126,6 @@ public final class WakeNavigation {
 
             try {
                 builder.addParameter("api_key", API_KEY);
-                builder.addParameter("region", "Berlin");
                 builder.addParameter("start", String.format("%s,%s", startLocation.longitude, startLocation.latitude));
                 builder.addParameter("end", String.format("%s,%s", destinationLocation.longitude, destinationLocation.latitude));
             } catch (ParseException e) {
