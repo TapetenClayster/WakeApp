@@ -14,19 +14,23 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.text.ParseException;
 import java.time.Duration;
+import java.time.ZonedDateTime;
 import java.util.*;
 
 public final class WakeNavigation {
     private static final Gson gson = new Gson();
     private static final String API_KEY = "";
     private static final String BASE_URL = "https://api.openrouteservice.org";
-    private static final String BASE_SEARCH_URL = BASE_URL + "/geocode/search";
-    private static final String BASE_NAVIGATION_URL = BASE_URL + "/v2/directions";
+    private static final String BASE_SEARCH_URL = String.format("%s/geocode/search", BASE_URL);
+    private static final String BASE_NAVIGATION_URL = String.format("%s/v2/directions", BASE_URL);
+    private static final String BASE_URL_BVG = "https://v5.bvg.transport.rest";
+    private static final String BASE_URL_BVG_LOCATION = String.format("%s/locations", BASE_URL_BVG);
+    private static final String BASE_URL_BVG_NAVIGATION = String.format("%s/journeys", BASE_URL_BVG);
 
-    private static final Map<String, String> transportMethod = Map.of(
+    private static final Map<String, String> transportTypeMap = Map.of(
             "Auto", "driving-car",
             "Fahrrad", "cycling-regular",
-            "ÖPNV", "bus",
+            "ÖPNV", "bvg",
             "Laufen", "foot-walking",
             "Rollstuhl", "wheelchair"
     );
@@ -34,7 +38,10 @@ public final class WakeNavigation {
     public static List<Location> searchLocationRequest(String searchInput) throws IOException, InterruptedException {
         HttpClient client = HttpClient.newHttpClient();
 
-        HttpResponse<String> response = client.send(createSearchRequest(searchInput), HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> response = client.send(
+                createSearchRequest(searchInput),
+                HttpResponse.BodyHandlers.ofString()
+        );
 
         return sanitizeSearchBody(response);
     }
@@ -86,25 +93,54 @@ public final class WakeNavigation {
         return entries;
     }
 
-    public static String navigationRequest(Location startLocation, Location endLocation, String transportMethod) throws IOException, InterruptedException {
+    public static Duration navigationRequest(Location startLocation, Location endLocation, String transportMethod) throws IOException, InterruptedException {
         HttpClient client = HttpClient.newHttpClient();
 
-        HttpResponse<String> response = client.send(createNavigationRequest(startLocation, endLocation, transportMethod), HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> response = client.send(
+                createNavigationRequest(startLocation, endLocation, transportTypeMap.get(transportMethod)),
+                HttpResponse.BodyHandlers.ofString()
+        );
 
-        return sanitizeNavigationBody(response);
+        if(transportMethod.equals("ÖPNV"))
+            return sanitizeBvgNavigationBody(response);
+        else
+            return sanitizeNavigationBody(response);
     }
 
     private static HttpRequest createNavigationRequest(Location startLocation, Location destinationLocation, String transportMethod){
-        RequestURIBuilder builder = new RequestURIBuilder(BASE_NAVIGATION_URL + "/driving-car");
-        //TODO: Add transport method handling
+        RequestURIBuilder builder;
+        if(!transportMethod.equals("bvg")) {
+            builder = new RequestURIBuilder(String.format("%s/%s", BASE_NAVIGATION_URL, transportMethod));
 
-        try {
-            builder.addParameter("api_key", API_KEY);
-            builder.addParameter("region", "Berlin");
-            builder.addParameter("start", String.format("%s,%s", startLocation.longitude, startLocation.latitude));
-            builder.addParameter("end", String.format("%s,%s", destinationLocation.longitude, destinationLocation.latitude));
-        } catch (ParseException e) {
-            e.printStackTrace();
+            try {
+                builder.addParameter("api_key", API_KEY);
+                builder.addParameter("region", "Berlin");
+                builder.addParameter("start", String.format("%s,%s", startLocation.longitude, startLocation.latitude));
+                builder.addParameter("end", String.format("%s,%s", destinationLocation.longitude, destinationLocation.latitude));
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
+        } else {
+            builder = new RequestURIBuilder(BASE_URL_BVG_NAVIGATION);
+
+            Location startLocationBvg = searchBvgLocations(startLocation);
+            Location destinationlocationBvg = searchBvgLocations(destinationLocation);
+
+            try {
+                assert startLocationBvg != null && destinationlocationBvg != null;
+
+                builder.addParameter("from", startLocationBvg.bvgId);
+                builder.addParameter("from.longitude", startLocationBvg.longitude);
+                builder.addParameter("from.latitude", startLocationBvg.latitude);
+
+                builder.addParameter("to", destinationlocationBvg.bvgId);
+                builder.addParameter("to.longitude", destinationlocationBvg.longitude);
+                builder.addParameter("to.latitude", destinationlocationBvg.latitude);
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
+
+            System.out.println(builder.toURI());
         }
 
         return HttpRequest.newBuilder()
@@ -113,7 +149,40 @@ public final class WakeNavigation {
                 .build();
     }
 
-    private static String sanitizeNavigationBody(HttpResponse<String> response) throws NoSuchElementException {
+    private static Location searchBvgLocations(Location searchLocation) {
+        RequestURIBuilder builder = new RequestURIBuilder(BASE_URL_BVG_LOCATION);
+        HttpResponse<String> response;
+
+        try {
+            builder.addParameter("results", 1);
+            builder.addParameter("query", searchLocation.street.replace(" ", "%20"));
+
+            response = HttpClient.newHttpClient().send(
+                    HttpRequest.newBuilder().uri(builder.toURI()).GET().build(),
+                    HttpResponse.BodyHandlers.ofString()
+            );
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+
+        Type jsonElement = new TypeToken<JsonElement>() {}.getType();
+        JsonElement responseBody = gson.fromJson(response.body(), jsonElement);
+
+        JsonObject result = responseBody.getAsJsonArray()
+                .get(0).getAsJsonObject();
+
+        JsonObject resultLocation = result.get("location").getAsJsonObject();
+
+        return new Location(
+                result.get("name").getAsString(),
+                resultLocation.get("longitude").getAsString(),
+                resultLocation.get("latitude").getAsString(),
+                result.get("id").getAsString()
+        );
+    }
+
+    private static Duration sanitizeNavigationBody(HttpResponse<String> response) throws NoSuchElementException {
         Type jsonElement = new TypeToken<JsonElement>() {}.getType();
         JsonElement responseBody = gson.fromJson(response.body(), jsonElement);
 
@@ -126,9 +195,29 @@ public final class WakeNavigation {
                     .get(0).getAsJsonObject()
                     .get("duration").getAsDouble();
 
-            return Duration.ofSeconds(Double.valueOf(totalTravelTime).longValue()).toString();
+            return Duration.ofSeconds(Double.valueOf(totalTravelTime).longValue());
         } catch (Exception e){
             throw new NoSuchElementException("Travel duration was not found");
+        }
+    }
+
+    private static Duration sanitizeBvgNavigationBody(HttpResponse<String> response) throws NoSuchElementException{
+        Type jsonElement = new TypeToken<JsonElement>() {}.getType();
+        JsonElement responseBody = gson.fromJson(response.body(), jsonElement);
+
+        try{
+            JsonObject currNavigation = responseBody.getAsJsonObject()
+                    .get("journeys").getAsJsonArray()
+                    .get(0).getAsJsonObject()
+                    .get("legs").getAsJsonArray()
+                    .get(0).getAsJsonObject();
+
+            ZonedDateTime startTime = ZonedDateTime.parse(currNavigation.get("plannedDeparture").getAsString());
+            ZonedDateTime arrivalTime = ZonedDateTime.parse(currNavigation.get("plannedArrival").getAsString());
+
+            return Duration.between(startTime, arrivalTime);
+        } catch (Exception e){
+            throw new NoSuchElementException("No Start or Arrival time were found in the response body");
         }
     }
 
