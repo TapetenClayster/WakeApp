@@ -15,22 +15,33 @@ public class WakeManager {
     private void start() {
         dbConnector = new WakeDatabaseConnector();
 
-        String output = "Herzlich Willkommen zur WakeApp Terminal App"
-                + "--------------------------------------------"
-                + "Ihre gespeicherten Werte werden nun geladen, falls vorhanden.";
+        String output = "Herzlich Willkommen zur WakeApp Terminal App\n"
+                + "--------------------------------------------\n"
+                + "Möchten Sie [1] gespeicherte Daten laden oder [2] selbst Daten eingeben?";
 
         System.out.println(output);
+        Scanner reader = new Scanner(System.in);
+        int choice = reader.nextInt();
 
-        if (this.retrieveDataFromMemory()) {
+        while (!(choice == 1 || choice == 2)) {
+            System.out.println("Bitte wählen Sie eine der zwei Möglichkeiten: 1 oder 2");
+            choice = reader.nextInt();
+        }
+
+        if (choice == 1 && this.retrieveDataFromMemory()) {
             System.out.println("Daten wurden geladen.");
+        } else if (choice == 1 && !this.retrieveDataFromMemory()) {
+            System.out.println("Leider konnten keine Daten geladen werden und müssen manuell eingegeben werden.");
+            this.retrieveDataFromTerminal();
         } else {
-            this.retrieveDateFromTerminal();
+            this.retrieveDataFromTerminal();
         }
 
         this.calculate();
     }
 
     boolean retrieveDataFromMemory() {
+        /*
         ArrayList<WakeTime> wakeTimeList = dbConnector.getWaketimes();
 
         if (wakeTimeList.isEmpty()) {
@@ -39,36 +50,50 @@ public class WakeManager {
 
         for (WakeTime wakeTime: wakeTimeList) {
             // TODO load wake times
-        }
+        }*/
 
-        return true;
+        return false;
     }
 
-    private void retrieveDateFromTerminal() {
-        System.out.println("Es konnten keine Standardwerte eingelesen werden."
-                + "Alle Werte werden auf 0 gesetzt");
+    boolean checkInput(String input, Integer arrival_h, Integer arrival_min) {
+        boolean match = false;
 
+        if (input.matches("[0-2]{0,1}[0-9]:[0-6]{0,1}[0-9]")) {
+            match = true;
+        }
+
+        if (0 <= arrival_h && arrival_h < 24 && 0 <= arrival_min && arrival_min < 60) {
+            match = true;
+        } else {
+            match = false;
+        }
+
+        return match;
+    }
+
+    private void retrieveDataFromTerminal() {
         Scanner reader = new Scanner(System.in);
 
-        System.out.println("Geben Sie die Ankunftszeit/Zielzeit ein (hh:mm)");
+        System.out.println("Geben Sie die Ankunftszeit/Zielzeit ein (hh:mm):");
         String arrival_input = reader.next();
-
-        while (!arrival_input.matches("[0-2]{0,1}[0-9]:[0-6]{0,1}[0-9]")) {
-            System.out.println("Die Eingabe entspricht nicht dem angegebenen Format, bitte wiederholen Sie Ihre Eingabe: (hh:mm)");
-            arrival_input = reader.next();
-        }
 
         Integer arrival_h = Integer.parseInt(arrival_input.substring(0, arrival_input.indexOf(':')));
         Integer arrival_min = Integer.parseInt(arrival_input.substring(arrival_input.indexOf(':') + 1, arrival_input.length()));
 
-        //TODO: More error handling for possible false input?
+        while (!checkInput(arrival_input, arrival_h, arrival_min)) {
+            System.out.println("Die eingegebene Zeit entspricht keiner legitimen Uhrzeit. Bitte geben Sie eine Uhrzeit im 24h Format an (hh:mm)");
+
+            arrival_input = reader.next();
+            arrival_h = Integer.parseInt(arrival_input.substring(0, arrival_input.indexOf(':')));
+            arrival_min = Integer.parseInt(arrival_input.substring(arrival_input.indexOf(':') + 1, arrival_input.length()));
+        }
 
         this.arrival = LocalTime.of(arrival_h, arrival_min);
 
-        System.out.println("Wie lange brauchen Sie für Ihren normalen Fahrtweg? (in Minuten");
+        System.out.println("Wie lange brauchen Sie für Ihren normalen Fahrtweg? (in Minuten):");
         this.drive = reader.nextInt();
 
-        System.out.println("Wie lange brauchen Sie, um sich morgens fertigzumachen? (in Minuten)");
+        System.out.println("Wie lange brauchen Sie, um sich morgens fertigzumachen? (in Minuten):");
         this.preparation = reader.nextInt();
     }
 
