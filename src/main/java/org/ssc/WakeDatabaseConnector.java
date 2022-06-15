@@ -40,7 +40,6 @@ public class WakeDatabaseConnector {
             if (connection != null) {
                 connection.close();
             }
-            ;
         } catch (Exception e) {
             e.printStackTrace();
         }
