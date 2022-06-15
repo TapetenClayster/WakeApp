@@ -38,9 +38,30 @@ public class WakeManager {
         }
 
         this.calculate();
+
+        System.out.println("Möchten Sie eine weitere Weckzeit berechnen?\n" +
+                "[1] Ja [2] Nein, Programm beenden"
+        );
+
+        int end_choice = reader.nextInt();
+
+        while(!(end_choice == 1 | end_choice == 2)) {
+            System.out.println("Für die Berechnung einer neuen Weckzeit wählen Sie die " +
+                    "[1], für das Beenden des Programmes [2]."
+            );
+
+            end_choice = reader.nextInt();
+        }
+
+         if(end_choice == 1) {
+             this.retrieveDataFromTerminal();
+         }
+
+         System.out.println("Bis zum nächsten Mal!");
+         System.exit(0);
     }
 
-    boolean retrieveDataFromMemory() {
+    private boolean retrieveDataFromMemory() {
         /*
         ArrayList<WakeTime> wakeTimeList = dbConnector.getWaketimes();
 
@@ -55,7 +76,7 @@ public class WakeManager {
         return false;
     }
 
-    boolean checkInput(String input, Integer arrival_h, Integer arrival_min) {
+    private boolean checkInput(String input, Integer arrival_h, Integer arrival_min) {
         boolean match = false;
 
         if (input.matches("[0-2]{0,1}[0-9]:[0-6]{0,1}[0-9]")) {
