@@ -71,8 +71,9 @@ public class WakeManager {
             int end_choice = reader.nextInt();
 
             while (!(end_choice == 1 | end_choice == 2)) {
-                System.out.println("Für die Berechnung einer neuen Weckzeit wählen Sie die " +
-                        "[1], für das Beenden des Programmes [2]."
+                System.out.println("Falsche Eingabe" +
+                        "Für die Berechnung einer neuen Weckzeit wählen Sie die [1], " +
+                        "für das Beenden des Programmes [2]."
                 );
 
                 end_choice = reader.nextInt();
