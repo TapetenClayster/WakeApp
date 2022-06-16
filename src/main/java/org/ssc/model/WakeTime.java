@@ -1,4 +1,4 @@
-package org.ssc;
+package org.ssc.model;
 
 import java.time.LocalTime;
 
@@ -8,19 +8,23 @@ public class WakeTime {
     private int drive;
     private int preparation;
     private TransportType transType;
+    private Location startLocation;
+    private Location endLocation;
 
-    enum TransportType {
+    public enum TransportType {
         ON_FOOT,
         CYCLE,
         OVPN,
         CAR
     }
 
-    public WakeTime(LocalTime arrival, int drive, int preparation, TransportType transType) {
+    public WakeTime(LocalTime arrival, int drive, int preparation, TransportType transType, Location startLocation, Location endLocation) {
         this.arrival = arrival;
         this.drive = drive;
         this.preparation = preparation;
         this.transType = transType;
+        this.startLocation = startLocation;
+        this.endLocation = endLocation;
     }
 
     public LocalTime getArrival() {
@@ -53,5 +57,21 @@ public class WakeTime {
 
     public void setTransType(TransportType transType) {
         this.transType = transType;
+    }
+
+    public Location getStartLocation() {
+        return startLocation;
+    }
+
+    public void setStartLocation(Location startLocation) {
+        this.startLocation = startLocation;
+    }
+
+    public Location getEndLocation() {
+        return endLocation;
+    }
+
+    public void setEndLocation(Location endLocation) {
+        this.endLocation = endLocation;
     }
 }

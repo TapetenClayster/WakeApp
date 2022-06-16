@@ -18,7 +18,7 @@ import java.util.*;
 
 public final class WakeNavigation {
     private static final Gson gson = new Gson();
-    private static final String API_KEY = "";
+    private static final String API_KEY = "5b3ce3597851110001cf6248348722fe73aa4a40bd18d4bb9afff3eb";
     private static final String BASE_URL = "https://api.openrouteservice.org";
     private static final String BASE_SEARCH_URL = String.format("%s/geocode/search", BASE_URL);
     private static final String BASE_NAVIGATION_URL = String.format("%s/v2/directions", BASE_URL);
@@ -55,7 +55,7 @@ public final class WakeNavigation {
     private static HttpRequest createSearchRequest(String searchInput) {
         RequestURIBuilder builder = new RequestURIBuilder(BASE_SEARCH_URL);
 
-        String sanitizedSearchInput = String.format("%s %s",searchInput.replace(" ", "%20"), "Berlin");
+        String sanitizedSearchInput = String.format("%s %s",searchInput, "Berlin").replace(" ", "%20");
 
         try {
             builder.addParameter("api_key", API_KEY);

@@ -1,11 +1,11 @@
 package org.ssc;
 
 import org.ssc.model.Location;
+import org.ssc.model.WakeTime;
 
 import java.time.Duration;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -73,18 +73,14 @@ public class WakeManager {
     }
 
     private boolean retrieveDataFromMemory() {
-        /*
-        ArrayList<WakeTime> wakeTimeList = dbConnector.getWaketimes();
+        WakeTime wakeTime = dbConnector.getWaketime();
 
-        if (wakeTimeList.isEmpty()) {
+        if (wakeTime == null) {
             return false;
         }
+        // TODO Save into variables
 
-        for (WakeTime wakeTime : wakeTimeList) {
-            // TODO load wake times
-        }*/
-
-        return false;
+        return true;
     }
 
     private boolean checkInput(String input, Integer arrival_h, Integer arrival_min) {
