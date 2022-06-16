@@ -7,6 +7,7 @@ import java.time.Duration;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
 
@@ -50,9 +51,11 @@ public class WakeManager {
 
         this.calculate();
 
+        System.out.println(Arrays.toString(WakeTime.TransportType.values()));
+        System.out.println(this.transportType + " = " + WakeTime.TransportType.values()[this.transportType - 1]);
         WakeTime wakeTime = new WakeTime(this.arrival,
                 this.preparation,
-                WakeTime.TransportType.values()[this.transportType],
+                WakeTime.TransportType.values()[this.transportType - 1],
                 this.chosenStartLocation,
                 this.chosenDestinationLocation);
 
@@ -174,13 +177,6 @@ public class WakeManager {
             this.transportType = userVehicleChoice;
             break;
         }
-
-        System.out.println("Berechne den Kürzesten Weg zum Ziel... bitte warten...");
-        this.travelDuration = WakeNavigation.navigationRequest(this.chosenStartLocation, this.chosenDestinationLocation, this.transportType);
-
-        assert this.travelDuration != null;
-        System.out.printf("\nDie Anfahrtszeit Beträgt ca. %s", LocalTime.MIDNIGHT.plus(this.travelDuration).format(DateTimeFormatter.ofPattern("HH:mm:ss")));
-
     }
 
     private Location chooseLocation(List<Location> toChooseLocations, Scanner reader) {
@@ -212,6 +208,12 @@ public class WakeManager {
     }
 
     private void calculate() {
+        System.out.println("Berechne den Kürzesten Weg zum Ziel... bitte warten...");
+        this.travelDuration = WakeNavigation.navigationRequest(this.chosenStartLocation, this.chosenDestinationLocation, this.transportType);
+
+        assert this.travelDuration != null;
+        System.out.printf("\nDie Anfahrtszeit Beträgt ca. %s", LocalTime.MIDNIGHT.plus(this.travelDuration).format(DateTimeFormatter.ofPattern("HH:mm:ss")));
+
         this.wakeUp = arrival.minusMinutes(
                         Integer.toUnsignedLong(this.preparation))
                 .minus(this.travelDuration)
