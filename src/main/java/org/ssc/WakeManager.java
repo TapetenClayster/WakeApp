@@ -36,7 +36,7 @@ public class WakeManager {
         int choice = reader.nextInt();
 
         while (!(choice == 1 || choice == 2)) {
-            System.out.println("Bitte wählen Sie eine der zwei Möglichkeiten: 1 oder 2");
+            System.out.println("Bitte wählen Sie eine der zwei Möglichkeiten: [1] oder [2]");
             choice = reader.nextInt();
         }
 
@@ -49,38 +49,43 @@ public class WakeManager {
             this.retrieveDataFromTerminal();
         }
 
-        this.calculate();
+        boolean on = true;
 
-        System.out.println(Arrays.toString(WakeTime.TransportType.values()));
-        System.out.println(this.transportType + " = " + WakeTime.TransportType.values()[this.transportType - 1]);
-        WakeTime wakeTime = new WakeTime(this.arrival,
-                this.preparation,
-                WakeTime.TransportType.values()[this.transportType - 1],
-                this.chosenStartLocation,
-                this.chosenDestinationLocation);
+        while (on) {
+            this.calculate();
 
-        dbConnector.insertOrUpdateWaketime(wakeTime);
+            System.out.println(Arrays.toString(WakeTime.TransportType.values()));
+            System.out.println(this.transportType + " = " + WakeTime.TransportType.values()[this.transportType - 1]);
+            WakeTime wakeTime = new WakeTime(this.arrival,
+                    this.preparation,
+                    WakeTime.TransportType.values()[this.transportType - 1],
+                    this.chosenStartLocation,
+                    this.chosenDestinationLocation);
 
-        System.out.println("Möchten Sie eine weitere Weckzeit berechnen?\n" +
-                "[1] Ja [2] Nein, Programm beenden"
-        );
+            dbConnector.insertOrUpdateWaketime(wakeTime);
 
-        int end_choice = reader.nextInt();
-
-        while(!(end_choice == 1 | end_choice == 2)) {
-            System.out.println("Für die Berechnung einer neuen Weckzeit wählen Sie die " +
-                    "[1], für das Beenden des Programmes [2]."
+            System.out.println("Möchten Sie eine weitere Weckzeit berechnen?\n" +
+                    "[1] Ja [2] Nein, Programm beenden"
             );
 
-            end_choice = reader.nextInt();
+            int end_choice = reader.nextInt();
+
+            while (!(end_choice == 1 | end_choice == 2)) {
+                System.out.println("Für die Berechnung einer neuen Weckzeit wählen Sie die " +
+                        "[1], für das Beenden des Programmes [2]."
+                );
+
+                end_choice = reader.nextInt();
+            }
+
+            if (end_choice == 2) {
+                on = false;
+            } else {
+                this.retrieveDataFromTerminal();
+            }
         }
 
-         if(end_choice == 1) {
-             this.retrieveDataFromTerminal();
-         }
-
-         System.out.println("Bis zum nächsten Mal!");
-         System.exit(0);
+        System.out.println("Bis zum nächsten Mal!");
     }
 
     private boolean retrieveDataFromMemory() {
