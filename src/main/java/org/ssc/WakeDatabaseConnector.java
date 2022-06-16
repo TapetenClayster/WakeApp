@@ -5,7 +5,6 @@ import org.ssc.model.WakeTime;
 
 import java.sql.*;
 import java.time.LocalTime;
-import java.util.ArrayList;
 
 public class WakeDatabaseConnector {
 
@@ -58,42 +57,41 @@ public class WakeDatabaseConnector {
             if (resultSet.next()) {
                 Location start;
                 Location end;
-                if (resultSet.getString(17) == null) {
-                    start = new Location(resultSet.getString(9),
+                if (resultSet.getString(16) == null) {
+                    start = new Location(resultSet.getString(8),
+                            resultSet.getString(9),
                             resultSet.getString(10),
                             resultSet.getString(11),
                             resultSet.getString(12),
                             resultSet.getString(13),
                             resultSet.getString(14),
+                            resultSet.getString(15));
+                } else {
+                    start = new Location(resultSet.getString(8),
+                            resultSet.getString(14),
                             resultSet.getString(15),
                             resultSet.getString(16));
-                } else {
-                    start = new Location(resultSet.getString(9),
-                            resultSet.getString(15),
-                            resultSet.getString(16),
-                            resultSet.getString(17));
                 }
 
-                if (resultSet.getString(27) == null) {
-                    end = new Location(resultSet.getString(19),
+                if (resultSet.getString(26) == null) {
+                    end = new Location(resultSet.getString(18),
+                            resultSet.getString(19),
                             resultSet.getString(20),
                             resultSet.getString(21),
                             resultSet.getString(22),
                             resultSet.getString(23),
                             resultSet.getString(24),
+                            resultSet.getString(25));
+                } else {
+                    end = new Location(resultSet.getString(18),
+                            resultSet.getString(24),
                             resultSet.getString(25),
                             resultSet.getString(26));
-                } else {
-                    end = new Location(resultSet.getString(19),
-                            resultSet.getString(25),
-                            resultSet.getString(26),
-                            resultSet.getString(27));
                 }
 
                 wakeTime = new WakeTime(resultSet.getTime(2).toLocalTime(),
                         resultSet.getInt(3),
-                        resultSet.getInt(4),
-                        WakeTime.TransportType.valueOf(resultSet.getString(5)),
+                        WakeTime.TransportType.valueOf(resultSet.getString(4)),
                         start,
                         end);
             } else {
@@ -117,8 +115,7 @@ public class WakeDatabaseConnector {
             Location endLocation = wakeTime.getEndLocation();
 
             preparedStatement = connection.prepareStatement(
-                    "INSERT INTO wakeapp_db.T_Locations (p_location_id, name, street, housenumber, postalcode, region, country, longitude, latitude, bvgId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);",
-                    Statement.RETURN_GENERATED_KEYS);
+                    "INSERT INTO wakeapp_db.T_Locations (p_location_id, name, street, housenumber, postalcode, region, country, longitude, latitude, bvgId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);");
 
             preparedStatement.setInt(1, 1);
             preparedStatement.setString(2, startLocation.name);
@@ -134,8 +131,7 @@ public class WakeDatabaseConnector {
             preparedStatement.executeUpdate();
 
             preparedStatement = connection.prepareStatement(
-                    "INSERT INTO wakeapp_db.T_Locations (p_location_id, name, street, housenumber, postalcode, region, country, longitude, latitude, bvgId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);",
-                    Statement.RETURN_GENERATED_KEYS);
+                    "INSERT INTO wakeapp_db.T_Locations (p_location_id, name, street, housenumber, postalcode, region, country, longitude, latitude, bvgId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);");
 
             preparedStatement.setInt(1, 2);
             preparedStatement.setString(2, endLocation.name);
@@ -151,16 +147,14 @@ public class WakeDatabaseConnector {
             preparedStatement.executeUpdate();
 
             preparedStatement = connection.prepareStatement(
-                    "INSERT INTO wakeapp_db.T_Waketimes (p_waketime_id, arrivaltime, travelduration, prepduration, transporttype, f_location_id1, f_location_id2) VALUES (?, ?, ?, ?, ?, ?, ?);",
-                    Statement.RETURN_GENERATED_KEYS);
+                    "INSERT INTO wakeapp_db.T_Waketimes (p_waketime_id, arrivaltime, prepduration, transporttype, f_location_id1, f_location_id2) VALUES (?, ?, ?, ?, ?, ?);");
 
             preparedStatement.setInt(1, 1);
             preparedStatement.setTime(2, Time.valueOf(wakeTime.getArrival()));
-            preparedStatement.setInt(3, wakeTime.getDrive());
-            preparedStatement.setInt(4, wakeTime.getPreparation());
-            preparedStatement.setString(5, wakeTime.getTransType().name());
-            preparedStatement.setInt(6, 1);
-            preparedStatement.setInt(7, 2);
+            preparedStatement.setInt(3, wakeTime.getPreparation());
+            preparedStatement.setString(4, wakeTime.getTransType().name());
+            preparedStatement.setInt(5, 1);
+            preparedStatement.setInt(6, 2);
 
             preparedStatement.executeUpdate();
 
@@ -235,13 +229,12 @@ public class WakeDatabaseConnector {
             preparedStatement.executeUpdate();
 
             preparedStatement = connection.prepareStatement(
-                    "UPDATE wakeapp_db.T_Waketimes SET arrivaltime = ?, travelduration = ?, prepduration = ?, transporttype = ? WHERE p_waketime_id = ?;");
+                    "UPDATE wakeapp_db.T_Waketimes SET arrivaltime = ?, prepduration = ?, transporttype = ? WHERE p_waketime_id = ?;");
 
             preparedStatement.setTime(1, Time.valueOf(wakeTime.getArrival()));
-            preparedStatement.setInt(2, wakeTime.getDrive());
-            preparedStatement.setInt(3, wakeTime.getPreparation());
-            preparedStatement.setString(4, wakeTime.getTransType().name());
-            preparedStatement.setInt(5, 1);
+            preparedStatement.setInt(2, wakeTime.getPreparation());
+            preparedStatement.setString(3, wakeTime.getTransType().name());
+            preparedStatement.setInt(4, 1);
 
             preparedStatement.executeUpdate();
 
@@ -311,12 +304,12 @@ public class WakeDatabaseConnector {
     }
 
     public void test() {
-        // Database test: Adds Waketime, then removes it.
+        // Database test: Adds Waketime, then updates and removes it.
         WakeDatabaseConnector dbConnector = new WakeDatabaseConnector();
         Location l1 = new Location("Home", "", "", "");
         Location l2 = new Location("School", "", "", "");
-        WakeTime wt1 = new WakeTime(LocalTime.now().plusHours(2), 30, 10, WakeTime.TransportType.OVPN, l1, l2);
-        WakeTime wt2 = new WakeTime(LocalTime.now().plusHours(4), 60, 20, WakeTime.TransportType.CAR, l2, l1);
+        WakeTime wt1 = new WakeTime(LocalTime.now().plusHours(2), 10, WakeTime.TransportType.BVG, l1, l2);
+        WakeTime wt2 = new WakeTime(LocalTime.now().plusHours(4), 20, WakeTime.TransportType.CAR, l2, l1);
         System.out.println((dbConnector.getWaketime() != null ? "True" : "False") + " Waketime in database.");
         dbConnector.insertOrUpdateWaketime(wt1);
         System.out.println((dbConnector.getWaketime() != null ? "True" : "False") + " Waketime in database.");

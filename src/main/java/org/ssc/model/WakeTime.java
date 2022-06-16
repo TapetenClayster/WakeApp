@@ -12,15 +12,16 @@ public class WakeTime {
     private Location endLocation;
 
     public enum TransportType {
-        ON_FOOT,
+        CAR,
         CYCLE,
-        OVPN,
-        CAR
+        BVG,
+        ON_FOOT,
+        WHEELCHAIR
+
     }
 
-    public WakeTime(LocalTime arrival, int drive, int preparation, TransportType transType, Location startLocation, Location endLocation) {
+    public WakeTime(LocalTime arrival, int preparation, TransportType transType, Location startLocation, Location endLocation) {
         this.arrival = arrival;
-        this.drive = drive;
         this.preparation = preparation;
         this.transType = transType;
         this.startLocation = startLocation;
@@ -33,14 +34,6 @@ public class WakeTime {
 
     public void setArrival(LocalTime arrival) {
         this.arrival = arrival;
-    }
-
-    public int getDrive() {
-        return drive;
-    }
-
-    public void setDrive(int drive) {
-        this.drive = drive;
     }
 
     public int getPreparation() {
