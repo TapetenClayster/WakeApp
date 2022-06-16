@@ -50,6 +50,14 @@ public class WakeManager {
 
         this.calculate();
 
+        WakeTime wakeTime = new WakeTime(this.arrival,
+                this.preparation,
+                WakeTime.TransportType.values()[this.transportType],
+                this.chosenStartLocation,
+                this.chosenDestinationLocation);
+
+        dbConnector.insertOrUpdateWaketime(wakeTime);
+
         System.out.println("Möchten Sie eine weitere Weckzeit berechnen?\n" +
                 "[1] Ja [2] Nein, Programm beenden"
         );
@@ -78,7 +86,12 @@ public class WakeManager {
         if (wakeTime == null) {
             return false;
         }
-        // TODO Save into variables
+
+        this.arrival = wakeTime.getArrival();
+        this.preparation = wakeTime.getPreparation();
+        this.transportType = wakeTime.getTransType().ordinal();
+        this.chosenStartLocation = wakeTime.getStartLocation();
+        this.chosenDestinationLocation = wakeTime.getEndLocation();
 
         return true;
     }
@@ -162,7 +175,7 @@ public class WakeManager {
             break;
         }
 
-        System.out.println("Berechne den Kürzesten Weg zum Ziel... bitter warten...");
+        System.out.println("Berechne den Kürzesten Weg zum Ziel... bitte warten...");
         this.travelDuration = WakeNavigation.navigationRequest(this.chosenStartLocation, this.chosenDestinationLocation, this.transportType);
 
         assert this.travelDuration != null;
