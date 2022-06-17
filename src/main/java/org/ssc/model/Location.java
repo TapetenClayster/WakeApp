@@ -35,18 +35,6 @@ public class Location {
         this.bvgId = bvgId;
     }
 
-    public Location(String name, String longitude, String latitude) {
-        this.name = name;
-        this.street = null;
-        this.housenumber = null;
-        this.postalcode = null;
-        this.region = null;
-        this.country = null;
-        this.longitude = longitude;
-        this.latitude = latitude;
-        this.bvgId = null;
-    }
-
     public String toString() {
         String output = "";
 
