@@ -55,7 +55,7 @@ public final class WakeNavigation {
     private static HttpRequest createSearchRequest(String searchInput) {
         RequestURIBuilder builder = new RequestURIBuilder(BASE_SEARCH_URL);
 
-        String sanitizedSearchInput = String.format("%s %s", searchInput, "Berlin").replace(" ", "%20");
+        String sanitizedSearchInput = String.format("%s %s", searchInput, "Berlin");
 
         try {
             builder.addParameter("api_key", API_KEY);

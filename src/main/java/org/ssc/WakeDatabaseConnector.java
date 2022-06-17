@@ -159,7 +159,6 @@ public class WakeDatabaseConnector {
             preparedStatement.executeUpdate();
 
 
-
             return true;
 
         } catch (Exception e) {

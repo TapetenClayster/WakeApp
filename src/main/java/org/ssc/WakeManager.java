@@ -3,11 +3,10 @@ package org.ssc;
 import org.ssc.model.Location;
 import org.ssc.model.WakeTime;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
 
@@ -22,7 +21,7 @@ public class WakeManager {
     private Scanner reader;
 
     private void start() {
-        reader = new Scanner(System.in);
+        reader = new Scanner(System.in, StandardCharsets.UTF_8);
         dbConnector = new WakeDatabaseConnector();
 
         String output = """
@@ -147,14 +146,15 @@ public class WakeManager {
         this.preparation = reader.nextInt();
         reader.nextLine();  //Nach jedem .next(), auf dass ein .nextLine() folgt, muss ein newline character gelesen werden um Fehler zu vermeiden
 
-        System.out.println("Von wo fahren Sie los? (Adresse)");
+        System.out.println("Von wo fahren Sie los? (So genau wie möglich, bitte)");
         String startLocationInput = reader.nextLine();
+        System.out.println(startLocationInput);
         List<Location> startLocations = WakeNavigation.searchLocationRequest(startLocationInput);
 
         assert startLocations != null;
         this.chosenStartLocation = chooseLocation(startLocations, reader);
 
-        System.out.println("Wo arbeiten Sie? (Adresse)");
+        System.out.println("Wo möchten Sie hin? (So genau wie möglich, bitte)");
         String destinationLocationInput = reader.nextLine();
         List<Location> destinationLocations = WakeNavigation.searchLocationRequest(destinationLocationInput);
 
@@ -242,8 +242,8 @@ public class WakeManager {
         WakeManager wm = new WakeManager();
         wm.start();
 
-        // DB Test
-//        WakeDatabaseConnector db = new WakeDatabaseConnector();
-//        db.test();
+        //DB Test;
+        //WakeDatabaseConnector db = new WakeDatabaseConnector();
+        //db.test();
     }
 }
