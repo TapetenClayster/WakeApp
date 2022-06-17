@@ -192,30 +192,17 @@ public final class WakeNavigation {
         JsonObject resultLocation;
 
         //Notwendig, weil es kein Uniformes output Format gibt
-        if (!result.get("id").isJsonNull()) {
-            if (result.has("location"))
-                resultLocation = result.get("location").getAsJsonObject();
-            else
-                resultLocation = result;
+        if (result.has("location"))
+            resultLocation = result.get("location").getAsJsonObject();
+        else
+            resultLocation = result;
 
-            return new Location(
-                    result.has("name") ? result.get("name").getAsString() : result.get("address").getAsString(),
-                    resultLocation.get("longitude").getAsString(),
-                    resultLocation.get("latitude").getAsString(),
-                    result.get("id").getAsString()
-            );
-        } else {
-            if (result.has("location"))
-                resultLocation = result.get("location").getAsJsonObject();
-            else
-                resultLocation = result;
-
-            return new Location(
-                    result.has("name") ? result.get("name").getAsString() : result.get("address").getAsString(),
-                    resultLocation.get("longitude").getAsString(),
-                    resultLocation.get("latitude").getAsString()
-            );
-        }
+        return new Location(
+                result.has("name") ? result.get("name").getAsString() : result.get("address").getAsString(),
+                resultLocation.get("longitude").getAsString(),
+                resultLocation.get("latitude").getAsString(),
+                result.get("id").isJsonNull() ? null : result.get("id").getAsString()
+        );
     }
 
     private static Duration sanitizeNavigationBody(HttpResponse<String> response) throws NoSuchElementException {

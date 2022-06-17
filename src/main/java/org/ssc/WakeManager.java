@@ -53,8 +53,6 @@ public class WakeManager {
 
         this.calculate();
 
-        System.out.println(Arrays.toString(WakeTime.TransportType.values()));
-        System.out.println(this.transportType + " = " + WakeTime.TransportType.values()[this.transportType - 1]);
         WakeTime wakeTime = new WakeTime(this.arrival,
                 this.preparation,
                 WakeTime.TransportType.values()[this.transportType - 1],
