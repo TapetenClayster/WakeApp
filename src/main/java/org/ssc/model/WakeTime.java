@@ -5,7 +5,6 @@ import java.time.LocalTime;
 public class WakeTime {
 
     private LocalTime arrival;
-    private int drive;
     private int preparation;
     private TransportType transType;
     private Location startLocation;

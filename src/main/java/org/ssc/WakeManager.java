@@ -51,8 +51,6 @@ public class WakeManager {
 
         this.calculate();
 
-        System.out.println(Arrays.toString(WakeTime.TransportType.values()));
-        System.out.println(this.transportType + " = " + WakeTime.TransportType.values()[this.transportType - 1]);
         WakeTime wakeTime = new WakeTime(this.arrival,
                 this.preparation,
                 WakeTime.TransportType.values()[this.transportType - 1],
@@ -92,7 +90,7 @@ public class WakeManager {
 
         this.arrival = wakeTime.getArrival();
         this.preparation = wakeTime.getPreparation();
-        this.transportType = wakeTime.getTransType().ordinal();
+        this.transportType = wakeTime.getTransType().ordinal() + 1;
         this.chosenStartLocation = wakeTime.getStartLocation();
         this.chosenDestinationLocation = wakeTime.getEndLocation();
 
