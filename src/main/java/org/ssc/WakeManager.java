@@ -105,45 +105,45 @@ public class WakeManager {
     }
 
     private boolean checkInput(String input, Integer arrival_h, Integer arrival_min) {
-        boolean match = false;
-
-        if (input.matches("[0-2]{0,1}[0-9]:[0-6]{0,1}[0-9]")) {
-            match = true;
-        }
-
-        if (0 <= arrival_h && arrival_h < 24 && 0 <= arrival_min && arrival_min < 60) {
-            match = true;
-        } else {
-            match = false;
-        }
-
-        return match;
+        return input.matches("[0-2]{0,1}[0-9]:[0-6]{0,1}[0-9]") && 0 <= arrival_h && arrival_h < 24 && 0 <= arrival_min && arrival_min < 60;
     }
 
     private void retrieveDataFromTerminal() {
+        String arrival_input;
+        int arrival_h;
+        int arrival_min;
+
         System.out.println("Geben Sie die Ankunftszeit/Zielzeit ein (hh:mm):");
-        String arrival_input = reader.next();
-
-        while (!arrival_input.matches("[0-2]{0,1}[0-9]:[0-6]{0,1}[0-9]")) {
-            System.out.println("Die Eingabe entspricht nicht dem angegebenen Format, bitte wiederholen Sie Ihre Eingabe: (hh:mm)");
+        do {
             arrival_input = reader.next();
-        }
 
-        int arrival_h = Integer.parseInt(arrival_input.substring(0, arrival_input.indexOf(':')));
-        int arrival_min = Integer.parseInt(arrival_input.substring(arrival_input.indexOf(':') + 1, arrival_input.length()));
+            try {
+                arrival_h = Integer.parseInt(arrival_input.substring(0, arrival_input.indexOf(':')));
+                arrival_min = Integer.parseInt(arrival_input.substring(arrival_input.indexOf(':') + 1));
 
-        while (!checkInput(arrival_input, arrival_h, arrival_min)) {
-            System.out.println("Die eingegebene Zeit entspricht keiner legitimen Uhrzeit. Bitte geben Sie eine Uhrzeit im 24h Format an (hh:mm)");
+                if (!checkInput(arrival_input, arrival_h, arrival_min))
+                    throw new Exception();
+            } catch (Exception e) {
+                System.out.println("Die eingegebene Zeit entspricht keiner legitimen Uhrzeit. Bitte geben Sie eine Uhrzeit im 24h Format an (hh:mm)");
+                continue;
+            }
 
-            arrival_input = reader.next();
-            arrival_h = Integer.parseInt(arrival_input.substring(0, arrival_input.indexOf(':')));
-            arrival_min = Integer.parseInt(arrival_input.substring(arrival_input.indexOf(':') + 1, arrival_input.length()));
-        }
+            break;
+        } while (true);
 
         this.arrival = LocalTime.of(arrival_h, arrival_min);
 
         System.out.println("Wie lange brauchen Sie, um sich morgens fertigzumachen? (in Minuten)");
-        this.preparation = reader.nextInt();
+        while(true) {
+            try {
+                this.preparation = reader.nextInt();
+            } catch (Exception e){
+                System.out.println("Keine valide Minuteangabe. Bitter Versuche Sie es erneut.");
+                reader.next(); //Sorgt für infinite loop wenn nicht vorhanden?
+                continue;
+            }
+            break;
+        }
         reader.nextLine();  //Nach jedem .next(), auf dass ein .nextLine() folgt, muss ein newline character gelesen werden um Fehler zu vermeiden
 
         System.out.println("Von wo fahren Sie los? (So genau wie möglich, bitte)");
