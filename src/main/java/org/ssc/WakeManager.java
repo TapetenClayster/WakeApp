@@ -15,24 +15,22 @@ public class WakeManager {
 
     private LocalTime arrival;
     private int preparation;
-    private List<Location> startLocations;
     private Location chosenStartLocation;
-    private List<Location> destinationLocations;
     private Location chosenDestinationLocation;
     private int transportType;
-    private Duration travelDuration;
-    private LocalTime wakeUp;
     private WakeDatabaseConnector dbConnector;
+    private Scanner reader;
 
     private void start() {
+        reader = new Scanner(System.in);
         dbConnector = new WakeDatabaseConnector();
 
-        String output = "Herzlich Willkommen zur WakeApp Terminal App\n"
-                + "--------------------------------------------\n"
-                + "Möchten Sie [1] gespeicherte Daten laden oder [2] selbst Daten eingeben?";
+        String output = """
+                Herzlich Willkommen zur WakeApp Terminal App
+                --------------------------------------------
+                Möchten Sie [1] gespeicherte Daten laden oder [2] selbst Daten eingeben?""";
 
         System.out.println(output);
-        Scanner reader = new Scanner(System.in);
         int choice = reader.nextInt();
 
         while (!(choice == 1 || choice == 2)) {
@@ -40,14 +38,18 @@ public class WakeManager {
             choice = reader.nextInt();
         }
 
-        if (choice == 1 && this.retrieveDataFromMemory()) {
-            System.out.println("Daten wurden geladen.");
-        } else if (choice == 1 && !this.retrieveDataFromMemory()) {
-            System.out.println("Leider konnten keine Daten geladen werden und müssen manuell eingegeben werden.");
-            this.retrieveDataFromTerminal();
-        } else {
-            this.retrieveDataFromTerminal();
-        }
+        mainLoop(choice == 1);
+    }
+
+    private void mainLoop(boolean loadFromDb) {
+        if (loadFromDb)
+            if (this.retrieveDataFromMemory()) {
+                System.out.println("Daten wurden geladen.");
+            } else {
+                System.out.println("Leider konnten keine Daten geladen werden und müssen manuell eingegeben werden.");
+                mainLoop(false);
+            }
+        else this.retrieveDataFromTerminal();
 
         this.calculate();
 
@@ -59,13 +61,19 @@ public class WakeManager {
 
         dbConnector.insertOrUpdateWaketime(wakeTime);
 
-        System.out.println("Möchten Sie eine weitere Weckzeit berechnen?\n" +
-                "[1] Ja [2] Nein, Programm beenden"
+        this.endingChoice();
+    }
+
+    private void endingChoice() {
+        System.out.println("""
+
+                Möchten Sie eine weitere Weckzeit berechnen?
+                [1] Ja [2] Nein, Programm beenden"""
         );
 
         int end_choice = reader.nextInt();
 
-        while(!(end_choice == 1 | end_choice == 2)) {
+        while (!(end_choice == 1 | end_choice == 2)) {
             System.out.println("Für die Berechnung einer neuen Weckzeit wählen Sie die " +
                     "[1], für das Beenden des Programmes [2]."
             );
@@ -73,12 +81,12 @@ public class WakeManager {
             end_choice = reader.nextInt();
         }
 
-         if(end_choice == 1) {
-             this.retrieveDataFromTerminal();
-         }
+        if (end_choice == 1) {
+            mainLoop(false);
+        }
 
-         System.out.println("Bis zum nächsten Mal!");
-         System.exit(0);
+        System.out.println("Bis zum nächsten Mal!");
+        System.exit(0);
     }
 
     private boolean retrieveDataFromMemory() {
@@ -114,8 +122,6 @@ public class WakeManager {
     }
 
     private void retrieveDataFromTerminal() {
-        Scanner reader = new Scanner(System.in);
-
         System.out.println("Geben Sie die Ankunftszeit/Zielzeit ein (hh:mm):");
         String arrival_input = reader.next();
 
@@ -139,30 +145,32 @@ public class WakeManager {
 
         System.out.println("Wie lange brauchen Sie, um sich morgens fertigzumachen? (in Minuten)");
         this.preparation = reader.nextInt();
-        reader.nextLine();
+        reader.nextLine();  //Nach jedem .next(), auf dass ein .nextLine() folgt, muss ein newline character gelesen werden um Fehler zu vermeiden
 
         System.out.println("Von wo fahren Sie los? (Adresse)");
         String startLocationInput = reader.nextLine();
-        this.startLocations = WakeNavigation.searchLocationRequest(startLocationInput);
+        List<Location> startLocations = WakeNavigation.searchLocationRequest(startLocationInput);
 
-        assert this.startLocations != null;
-        this.chosenStartLocation = chooseLocation(this.startLocations, reader);
+        assert startLocations != null;
+        this.chosenStartLocation = chooseLocation(startLocations, reader);
 
         System.out.println("Wo arbeiten Sie? (Adresse)");
         String destinationLocationInput = reader.nextLine();
-        this.destinationLocations = WakeNavigation.searchLocationRequest(destinationLocationInput);
+        List<Location> destinationLocations = WakeNavigation.searchLocationRequest(destinationLocationInput);
 
-        assert this.destinationLocations != null;
-        this.chosenDestinationLocation = chooseLocation(this.destinationLocations, reader);
+        assert destinationLocations != null;
+        this.chosenDestinationLocation = chooseLocation(destinationLocations, reader);
 
         System.out.println("Womit kommen Sie zur Arbeit?");
         while (true) {
             System.out.println(
-                    "(1) Auto\n" +
-                            "(2) Fahrrad\n" +
-                            "(3) ÖPNV\n" +
-                            "(4) Zu Fuß\n" +
-                            "(5) Rollstuhl\n"
+                    """
+                            (1) Auto
+                            (2) Fahrrad
+                            (3) ÖPNV
+                            (4) Zu Fuß
+                            (5) Rollstuhl
+                            """
             );
 
             int userVehicleChoice = reader.nextInt();
@@ -178,10 +186,20 @@ public class WakeManager {
     }
 
     private Location chooseLocation(List<Location> toChooseLocations, Scanner reader) {
-        System.out.println("Welche dieser gefundenen Adressen ist richtig?");
-        System.out.println("(Wenn Ihre Adresse nicht dabei ist, starten Sie neu und versuchen Sie etwas spezifischer zu sein)");
-
         while (true) {
+            assert toChooseLocations != null;
+            if (toChooseLocations.size() == 0) {
+                System.out.println("""
+                        Die Eingabe lieferte leider keine Ergebnisse...
+                        Versuchen sie es erneut mit einer anderen Eingabe""");
+
+                toChooseLocations = WakeNavigation.searchLocationRequest(reader.nextLine());
+                continue;
+            }
+
+            System.out.println("Welche dieser gefundenen Adressen ist richtig?");
+            System.out.println("(Wenn Ihre Adresse nicht dabei ist, starten Sie neu und versuchen Sie etwas spezifischer zu sein)");
+
             for (int i = 0; i < toChooseLocations.size(); i++) {
                 System.out.printf("\n(%d)\n", i + 1);
                 System.out.println(toChooseLocations.get(i).toString());
@@ -207,17 +225,17 @@ public class WakeManager {
 
     private void calculate() {
         System.out.println("Berechne den Kürzesten Weg zum Ziel... bitte warten...");
-        this.travelDuration = WakeNavigation.navigationRequest(this.chosenStartLocation, this.chosenDestinationLocation, this.transportType);
+        Duration travelDuration = WakeNavigation.navigationRequest(this.chosenStartLocation, this.chosenDestinationLocation, this.transportType);
 
-        assert this.travelDuration != null;
-        System.out.printf("\nDie Anfahrtszeit Beträgt ca. %s", LocalTime.MIDNIGHT.plus(this.travelDuration).format(DateTimeFormatter.ofPattern("HH:mm:ss")));
+        assert travelDuration != null;
+        System.out.printf("\nDie Anfahrtszeit Beträgt ca. %s", LocalTime.MIDNIGHT.plus(travelDuration).format(DateTimeFormatter.ofPattern("HH:mm:ss")));
 
-        this.wakeUp = arrival.minusMinutes(
+        LocalTime wakeUp = arrival.minusMinutes(
                         Integer.toUnsignedLong(this.preparation))
-                .minus(this.travelDuration)
+                .minus(travelDuration)
                 .minusMinutes(5); //5 Minuten buffer
 
-        System.out.printf("\nDie Weckzeit beträgt: %s Uhr", this.wakeUp.format(DateTimeFormatter.ofPattern("HH:mm")));
+        System.out.printf("\nDie Weckzeit beträgt: %s Uhr\n", wakeUp.format(DateTimeFormatter.ofPattern("HH:mm")));
     }
 
     public static void main(String[] args) {

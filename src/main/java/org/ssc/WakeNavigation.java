@@ -55,7 +55,7 @@ public final class WakeNavigation {
     private static HttpRequest createSearchRequest(String searchInput) {
         RequestURIBuilder builder = new RequestURIBuilder(BASE_SEARCH_URL);
 
-        String sanitizedSearchInput = String.format("%s %s",searchInput, "Berlin").replace(" ", "%20");
+        String sanitizedSearchInput = String.format("%s %s", searchInput, "Berlin").replace(" ", "%20");
 
         try {
             builder.addParameter("api_key", API_KEY);
@@ -140,18 +140,22 @@ public final class WakeNavigation {
             try {
                 assert startLocationBvg != null && destinationlocationBvg != null;
 
-                builder.addParameter("from", startLocationBvg.bvgId);
+                if (startLocationBvg.bvgId != null)
+                    builder.addParameter("from", startLocationBvg.bvgId);
+                else
+                    builder.addParameter("from.address", startLocationBvg.name);
                 builder.addParameter("from.longitude", startLocationBvg.longitude);
                 builder.addParameter("from.latitude", startLocationBvg.latitude);
 
-                builder.addParameter("to", destinationlocationBvg.bvgId);
+                if (destinationlocationBvg.bvgId != null)
+                    builder.addParameter("to", destinationlocationBvg.bvgId);
+                else
+                    builder.addParameter("to.address", destinationlocationBvg.name);
                 builder.addParameter("to.longitude", destinationlocationBvg.longitude);
                 builder.addParameter("to.latitude", destinationlocationBvg.latitude);
             } catch (ParseException e) {
                 e.printStackTrace();
             }
-
-            //System.out.println(builder.toURI());
         }
 
         return HttpRequest.newBuilder()
@@ -167,7 +171,7 @@ public final class WakeNavigation {
         try {
             builder.addParameter("results", 1);
             String searchQuery = !searchLocation.street.isEmpty() ? searchLocation.street : searchLocation.name;
-            builder.addParameter("query", searchQuery.replace(" ", "%20"));
+            builder.addParameter("query", searchQuery);
 
             response = HttpClient.newHttpClient().send(
                     HttpRequest.newBuilder().uri(builder.toURI()).GET().build(),
@@ -185,14 +189,33 @@ public final class WakeNavigation {
         JsonObject result = responseBody.getAsJsonArray()
                 .get(0).getAsJsonObject();
 
-        JsonObject resultLocation = result.get("location").getAsJsonObject();
+        JsonObject resultLocation;
 
-        return new Location(
-                result.get("name").getAsString(),
-                resultLocation.get("longitude").getAsString(),
-                resultLocation.get("latitude").getAsString(),
-                result.get("id").getAsString()
-        );
+        //Notwendig, weil es kein Uniformes output Format gibt
+        if (!result.get("id").isJsonNull()) {
+            if (result.has("location"))
+                resultLocation = result.get("location").getAsJsonObject();
+            else
+                resultLocation = result;
+
+            return new Location(
+                    result.has("name") ? result.get("name").getAsString() : result.get("address").getAsString(),
+                    resultLocation.get("longitude").getAsString(),
+                    resultLocation.get("latitude").getAsString(),
+                    result.get("id").getAsString()
+            );
+        } else {
+            if (result.has("location"))
+                resultLocation = result.get("location").getAsJsonObject();
+            else
+                resultLocation = result;
+
+            return new Location(
+                    result.has("name") ? result.get("name").getAsString() : result.get("address").getAsString(),
+                    resultLocation.get("longitude").getAsString(),
+                    resultLocation.get("latitude").getAsString()
+            );
+        }
     }
 
     private static Duration sanitizeNavigationBody(HttpResponse<String> response) throws NoSuchElementException {

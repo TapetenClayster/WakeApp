@@ -53,6 +53,9 @@ public class RequestURIBuilder {
             for (String parameterValue : parameterPair.getValue()) {
                 valueCounter++;
 
+                if (parameterValue.contains(" "))
+                    parameterValue = parameterValue.replace(" ", "%20");
+
                 queryString.append(parameterValue);
                 if (valueCounter != parameterPair.getValue().size()) {
                     queryString.append(",");
