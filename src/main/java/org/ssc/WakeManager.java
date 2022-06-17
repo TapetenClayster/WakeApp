@@ -124,8 +124,6 @@ public class WakeManager {
     }
 
     private void retrieveDataFromTerminal() {
-        Scanner reader = new Scanner(System.in);
-
         System.out.println("Geben Sie die Ankunftszeit/Zielzeit ein (hh:mm):");
         String arrival_input = reader.next();
 
@@ -168,11 +166,13 @@ public class WakeManager {
         System.out.println("Womit kommen Sie zur Arbeit?");
         while (true) {
             System.out.println(
-                    "(1) Auto\n" +
-                            "(2) Fahrrad\n" +
-                            "(3) ÖPNV\n" +
-                            "(4) Zu Fuß\n" +
-                            "(5) Rollstuhl\n"
+                    """
+                            (1) Auto
+                            (2) Fahrrad
+                            (3) ÖPNV
+                            (4) Zu Fuß
+                            (5) Rollstuhl
+                            """
             );
 
             int userVehicleChoice = reader.nextInt();
