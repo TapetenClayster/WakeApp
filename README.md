@@ -1,6 +1,9 @@
 # WakeApp
 School project
 
+## Setup
+Die [wakeapp_db.sql](wakeapp_db.sql) kann in phpMyAdmin importiert werden um die Datenbank zu erstellen.
+
 ## Kundenauftrag ⭐️
 Entwickeln Sie für das KBB die Wake-App, wobei Sie folgende Mindestanforderungen berücksichtigen:
 
